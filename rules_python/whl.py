@@ -18,6 +18,7 @@ import json
 import os
 import pkg_resources
 import re
+import shutil
 import zipfile
 
 
@@ -53,6 +54,12 @@ class Wheel(object):
     # e.g. google_cloud-0.27.0-py2.py3-none-any.whl ->
     #      google_cloud-0.27.0.dist-info
     return '{}-{}.dist-info'.format(self.distribution(), self.version())
+
+  def _data(self):
+    # Return the name of the data directory within the .whl file.
+    # e.g. google_cloud-0.27.0-py2.py3-none-any.whl ->
+    #      google_cloud-0.27.0.data
+    return '{}-{}.data'.format(self.distribution(), self.version())
 
   def metadata(self):
     # Extract the structured data from metadata.json in the WHL's dist-info
@@ -104,6 +111,12 @@ class Wheel(object):
   def expand(self, directory):
     with zipfile.ZipFile(self.path(), 'r') as whl:
       whl.extractall(directory)
+
+    # Move files under data/purelib to the top level.
+    purelib = os.path.join(directory, self._data(), 'purelib')
+    if os.path.exists(purelib):
+      for f in os.listdir(purelib):
+        shutil.move(os.path.join(purelib, f), directory)
 
   def file_names(self):
     with zipfile.ZipFile(self.path(), 'r') as whl:
