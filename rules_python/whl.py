@@ -105,6 +105,10 @@ class Wheel(object):
     with zipfile.ZipFile(self.path(), 'r') as whl:
       whl.extractall(directory)
 
+  def file_names(self):
+    with zipfile.ZipFile(self.path(), 'r') as whl:
+      return whl.namelist()
+
   # _parse_metadata parses METADATA files according to https://www.python.org/dev/peps/pep-0314/
   def _parse_metadata(self, content):
     # TODO: handle fields other than just name
@@ -134,11 +138,26 @@ def main():
   # Extract the files into the current directory
   whl.expand(args.directory)
 
+  # Create manifest file
+  with open(os.path.join(args.directory, 'manifest.bzl'), 'w') as f:
+    file_names = ['"{}"'.format(file_name) for file_name in whl.file_names()]
+    f.write("""
+contents = [
+  {files}
+]
+""".format(
+      files=',\n  '.join(file_names)
+    ))
+
   with open(os.path.join(args.directory, 'BUILD'), 'w') as f:
     f.write("""
 package(default_visibility = ["//visibility:public"])
 
 load("{requirements}", "requirement")
+
+exports_files(
+    glob(["**/*"], exclude=["**/*.py", "**/* *", "BUILD", "WORKSPACE"]),
+)
 
 py_library(
     name = "pkg",
