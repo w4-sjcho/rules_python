@@ -119,8 +119,15 @@ class Wheel(object):
         shutil.move(os.path.join(purelib, f), directory)
 
   def file_names(self):
+    purelib = os.path.join(self._data(), 'purelib')
+
+    def rename_purelib(file_name):
+      if file_name.startswith(purelib):
+        return file_name[len(purelib) + 1:]
+      return file_name
+
     with zipfile.ZipFile(self.path(), 'r') as whl:
-      return whl.namelist()
+      return [rename_purelib(file_name) for file_name in whl.namelist()]
 
   # _parse_metadata parses METADATA files according to https://www.python.org/dev/peps/pep-0314/
   def _parse_metadata(self, content):
