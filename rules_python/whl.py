@@ -73,7 +73,7 @@ class Wheel(object):
           pass
       # fall back to METADATA file (https://www.python.org/dev/peps/pep-0427/)
       with whl.open(self._dist_info() + '/METADATA') as f:
-        return self._parse_metadata(f.read().decode("utf-8"))
+        return Wheel._parse_metadata(f.read().decode("utf-8"))
 
   def name(self):
     return self.metadata().get('name')
@@ -130,10 +130,52 @@ class Wheel(object):
       return [rename_purelib(file_name) for file_name in whl.namelist()]
 
   # _parse_metadata parses METADATA files according to https://www.python.org/dev/peps/pep-0314/
-  def _parse_metadata(self, content):
+  @staticmethod
+  def _parse_metadata(content):
     # TODO: handle fields other than just name
-    name_pattern = re.compile('Name: (.*)')
-    return { 'name': name_pattern.search(content).group(1) }
+    name_pattern = re.compile('^Name: (.*)', flags=re.MULTILINE)
+    name = name_pattern.search(content).group(1)
+
+    extra_pattern = re.compile('^Provides-Extra: (.*)', flags=re.MULTILINE)
+    extras = sorted(extra_pattern.findall(content))
+
+    requires_pattern = re.compile('^Requires-Dist: (.*)', flags=re.MULTILINE)
+    requires = []
+    for req in requires_pattern.findall(content):
+      requires.extend(pkg_resources.parse_requirements(req))
+
+    def reqs_for_extra(extra):
+      for req in requires:
+        if not req.marker or req.marker.evaluate({'extra': extra}):
+          yield req
+
+    common = frozenset(reqs_for_extra(None))
+    require_map = {
+      None: list(common),
+    }
+
+    for extra in extras:
+      s_extra = pkg_resources.safe_extra(extra.strip())
+      require_map[s_extra] = list(frozenset(reqs_for_extra(extra)) - common)
+
+    run_requires = []
+    for extra, reqs in require_map.items():
+      for req in reqs:
+        run_require = {
+          'requires': [req.key],
+        }
+        if extra:
+          run_require['extra'] = extra
+        if req.marker:
+          run_require['marker'] = str(req.marker)
+        run_requires.append(run_require)
+    run_requires = sorted(run_requires, key=lambda r: r['requires'])
+
+    return {
+      'name': name,
+      'extras': extras,
+      'run_requires': run_requires,
+    }
 
 
 parser = argparse.ArgumentParser(

@@ -116,5 +116,73 @@ class WheelTest(unittest.TestCase):
     self.assertEqual(set(wheel.dependencies()),
                      set(expected_deps))
 
+  def test_parse_metadata(self):
+    content = '''Metadata-Version: 2.1
+Name: tensorflow
+Version: 1.12.0
+Requires-Dist: absl-py (>=0.1.6)
+Requires-Dist: astor (>=0.6.0)
+Requires-Dist: gast (>=0.2.0)
+Requires-Dist: keras-applications (>=1.0.6)
+Requires-Dist: keras-preprocessing (>=1.0.5)
+Requires-Dist: numpy (>=1.13.3)
+Requires-Dist: six (>=1.10.0)
+Requires-Dist: protobuf (>=3.6.1)
+Requires-Dist: tensorboard (<1.13.0,>=1.12.0)
+Requires-Dist: termcolor (>=1.1.0)
+Requires-Dist: grpcio (>=1.8.6)
+Requires-Dist: wheel (>=0.26)
+'''
+    self.assertEqual(whl.Wheel._parse_metadata(content), {
+      'extras': [],
+      'name': 'tensorflow',
+      'run_requires': [{'requires': ['absl-py']},
+                       {'requires': ['astor']},
+                       {'requires': ['gast']},
+                       {'requires': ['grpcio']},
+                       {'requires': ['keras-applications']},
+                       {'requires': ['keras-preprocessing']},
+                       {'requires': ['numpy']},
+                       {'requires': ['protobuf']},
+                       {'requires': ['six']},
+                       {'requires': ['tensorboard']},
+                       {'requires': ['termcolor']},
+                       {'requires': ['wheel']}],
+    })
+    content = '''Metadata-Version: 2.0
+Name: Werkzeug
+Provides-Extra: dev
+Requires-Dist: coverage; extra == 'dev'
+Requires-Dist: pytest; extra == 'dev'
+Requires-Dist: sphinx; extra == 'dev'
+Requires-Dist: tox; extra == 'dev'
+Provides-Extra: termcolor
+Requires-Dist: termcolor; extra == 'termcolor'
+Provides-Extra: watchdog
+Requires-Dist: watchdog; extra == 'watchdog'
+'''
+    self.assertEqual(whl.Wheel._parse_metadata(content), {
+      'extras': ['dev', 'termcolor', 'watchdog'],
+      'name': 'Werkzeug',
+      'run_requires': [{'extra': 'dev',
+                        'marker': 'extra == "dev"',
+                        'requires': ['coverage']},
+                       {'extra': 'dev',
+                        'marker': 'extra == "dev"',
+                        'requires': ['pytest']},
+                       {'extra': 'dev',
+                        'marker': 'extra == "dev"',
+                        'requires': ['sphinx']},
+                       {'extra': 'termcolor',
+                        'marker': 'extra == "termcolor"',
+                        'requires': ['termcolor']},
+                       {'extra': 'dev',
+                        'marker': 'extra == "dev"',
+                        'requires': ['tox']},
+                       {'extra': 'watchdog',
+                        'marker': 'extra == "watchdog"',
+                        'requires': ['watchdog']}]
+    })
+
 if __name__ == '__main__':
   unittest.main()
