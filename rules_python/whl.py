@@ -137,7 +137,7 @@ class Wheel(object):
     name = name_pattern.search(content).group(1)
 
     extra_pattern = re.compile('^Provides-Extra: (.*)', flags=re.MULTILINE)
-    extras = sorted(extra_pattern.findall(content))
+    extras = sorted(set(extra_pattern.findall(content)))
 
     requires_pattern = re.compile('^Requires-Dist: (.*)', flags=re.MULTILINE)
     requires = []
@@ -172,7 +172,8 @@ class Wheel(object):
           }
           run_requires[key] = entry
         entry['requires'].append(req.key)
-    run_requires = sorted(run_requires.values(), key=lambda r: r['requires'])
+    run_requires = sorted(run_requires.values(),
+                          key=lambda r: (r['extra'] or '', r['marker'] or ''))
     for entry in run_requires:
       entry['requires'] = sorted(entry['requires'])
 

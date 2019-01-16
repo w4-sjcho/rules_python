@@ -176,6 +176,61 @@ Requires-Dist: watchdog; extra == 'watchdog'
                         'marker': 'extra == "watchdog"',
                         'requires': ['watchdog']}]
     })
+    content = '''Metadata-Version: 2.1
+Name: librosa
+Provides-Extra: docs
+Provides-Extra: tests
+Provides-Extra: display
+Requires-Dist: audioread (>=2.0.0)
+Requires-Dist: numpy (>=1.8.0)
+Requires-Dist: scipy (>=0.14.0)
+Requires-Dist: scikit-learn (!=0.19.0,>=0.14.0)
+Requires-Dist: joblib (>=0.12)
+Requires-Dist: decorator (>=3.0.0)
+Requires-Dist: six (>=1.3)
+Requires-Dist: resampy (>=0.2.0)
+Requires-Dist: numba (>=0.38.0)
+Provides-Extra: display
+Requires-Dist: matplotlib (>=1.5); extra == 'display'
+Provides-Extra: docs
+Requires-Dist: numpydoc; extra == 'docs'
+Requires-Dist: sphinx (!=1.3.1); extra == 'docs'
+Requires-Dist: sphinx-rtd-theme; extra == 'docs'
+Requires-Dist: matplotlib (>=2.0.0); extra == 'docs'
+Requires-Dist: sphinxcontrib-versioning (>=2.2.1); extra == 'docs'
+Requires-Dist: sphinx-gallery; extra == 'docs'
+Provides-Extra: tests
+Requires-Dist: matplotlib (>=2.1); extra == 'tests'
+'''
+    self.assertEqual(whl.Wheel._parse_metadata(content), {
+      'extras': ['display', 'docs', 'tests'],
+      'name': 'librosa',
+      'run_requires': [{'extra': None,
+                        'marker': None,
+                        'requires': ['audioread',
+                                     'decorator',
+                                     'joblib',
+                                     'numba',
+                                     'numpy',
+                                     'resampy',
+                                     'scikit-learn',
+                                     'scipy',
+                                     'six']},
+                       {'extra': 'display',
+                        'marker': 'extra == "display"',
+                        'requires': ['matplotlib']},
+                       {'extra': 'docs',
+                        'marker': 'extra == "docs"',
+                        'requires': ['matplotlib',
+                                     'numpydoc',
+                                     'sphinx',
+                                     'sphinx-gallery',
+                                     'sphinx-rtd-theme',
+                                     'sphinxcontrib-versioning']},
+                       {'extra': 'tests',
+                        'marker': 'extra == "tests"',
+                        'requires': ['matplotlib']}]
+    })
 
 if __name__ == '__main__':
   unittest.main()
