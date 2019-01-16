@@ -158,18 +158,23 @@ class Wheel(object):
       s_extra = pkg_resources.safe_extra(extra.strip())
       require_map[s_extra] = list(frozenset(reqs_for_extra(extra)) - common)
 
-    run_requires = []
+    # Key: (extra, marker)
+    run_requires = {}
     for extra, reqs in require_map.items():
       for req in reqs:
-        run_require = {
-          'requires': [req.key],
-        }
-        if extra:
-          run_require['extra'] = extra
-        if req.marker:
-          run_require['marker'] = str(req.marker)
-        run_requires.append(run_require)
-    run_requires = sorted(run_requires, key=lambda r: r['requires'])
+        key = (extra, str(req.marker))
+        entry = run_requires.get(key)
+        if not entry:
+          entry = {
+            'requires': [],
+            'extra': extra,
+            'marker': str(req.marker) if req.marker else None,
+          }
+          run_requires[key] = entry
+        entry['requires'].append(req.key)
+    run_requires = sorted(run_requires.values(), key=lambda r: r['requires'])
+    for entry in run_requires:
+      entry['requires'] = sorted(entry['requires'])
 
     return {
       'name': name,
