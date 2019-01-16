@@ -1,7 +1,7 @@
 FROM gcr.io/gcp-runtimes/ubuntu_16_0_4:latest
 
 # Install Bazel (https://docs.bazel.build/versions/master/install-ubuntu.html)
-RUN apt-get update -y && apt-get install openjdk-8-jdk -y
+RUN apt-get update -y && apt-get install openjdk-8-jdk git -y
 RUN echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" | tee /etc/apt/sources.list.d/bazel.list
 RUN curl https://bazel.build/bazel-release.pub.gpg | apt-key add -
 RUN apt-get update -y && apt-get install bazel -y
