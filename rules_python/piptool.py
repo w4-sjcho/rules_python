@@ -150,11 +150,21 @@ def determine_possible_extras(whls):
     for whl in whls
   }
 
+def get_cache_dir():
+  cache_dir = os.path.expanduser("~/.piptool-cache")
+  if os.path.isdir(cache_dir):
+    return cache_dir
+  return None
+
 def main():
   args = parser.parse_args()
 
+  pip_wheel_args = ["wheel", "-w", args.directory, "-r", args.input]
+  cache_dir = get_cache_dir()
+  if cache_dir:
+    pip_wheel_args += ["--find-links", cache_dir]
   # https://github.com/pypa/pip/blob/9.0.1/pip/__init__.py#L209
-  if pip_main(["wheel", "-w", args.directory, "-r", args.input]):
+  if pip_main(pip_wheel_args):
     sys.exit(1)
 
   # Enumerate the .whl files we downloaded.
@@ -165,7 +175,16 @@ def main():
         if fname.endswith('.whl'):
           yield os.path.join(root, fname)
 
-  whls = [Wheel(path) for path in list_whls()]
+  whls = []
+  for whl_path in list_whls():
+    if cache_dir:
+      cache_whl_path = os.path.join(cache_dir, os.path.basename(whl_path))
+      if not os.path.exists(cache_whl_path):
+        # Copy the whl file built to cache dir so that in the next run, we
+        # could just use the prebuilt whl file through --find-links flag.
+        shutil.copyfile(whl_path, cache_whl_path)
+    whls.append(Wheel(whl_path))
+
   possible_extras = determine_possible_extras(whls)
 
   def whl_library(wheel):
